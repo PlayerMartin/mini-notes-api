@@ -1,13 +1,23 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+load_dotenv()
+
+from config.db_config import create_db
 from controllers.note_controller import router as note_router
 from controllers.webhook_controller import router as webhook_router
 
-load_dotenv()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_db()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.include_router(note_router)
 app.include_router(webhook_router)
 

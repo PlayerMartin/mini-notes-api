@@ -2,20 +2,23 @@ import os
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
-from fastapi.params import Header
+from fastapi.params import Depends, Header
 from starlette import status
 from starlette.status import HTTP_201_CREATED
 
+from config.di import get_note_repo
 from models.notes import CreateNote, Note
 from models.webhooks import WebhookNote
-from repositories import note_repository
+from repositories.note_repository import NoteRepository
 
 router = APIRouter(prefix="/webhooks")
 
 
 @router.post("/note", status_code=HTTP_201_CREATED)
-def create_note(
-    note: WebhookNote, x_webhook_token: Annotated[str | None, Header()] = None
+async def create_note(
+    note: WebhookNote,
+    x_webhook_token: Annotated[str | None, Header()] = None,
+    note_repo: NoteRepository = Depends(get_note_repo),
 ) -> Note:
     if x_webhook_token != os.getenv("WEBHOOK_TOKEN"):
         raise HTTPException(
@@ -26,4 +29,4 @@ def create_note(
     tags = note.tags
     tags.append(f"source:{note.source}")
     new_note = CreateNote(title=note.message[:40], content=note.message, tags=tags)
-    return note_repository.create(new_note)
+    return await note_repo.create(new_note)

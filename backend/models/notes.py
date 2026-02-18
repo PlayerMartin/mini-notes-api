@@ -1,14 +1,21 @@
 from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, Field
+from sqlalchemy import Column, VARCHAR
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlmodel import Field, SQLModel
 
 
-class CreateNote(BaseModel):
+class NoteBase(SQLModel):
     title: str = Field(min_length=1, max_length=100)
     content: str = ""
-    tags: list[str] = []
+    tags: list[str] = Field(default=[], sa_column=Column(ARRAY(VARCHAR)))
 
 
-class Note(CreateNote):
-    id: int
+class CreateNote(NoteBase):
+    pass
+
+
+class Note(NoteBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime
