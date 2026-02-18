@@ -12,6 +12,10 @@ class NoteBase(SQLModel):
     tags: list[str] = Field(default=[], sa_column=Column(ARRAY(VARCHAR)))
 
 
+class UpdateNote(NoteBase):
+    pass
+
+
 class CreateNote(NoteBase):
     pass
 

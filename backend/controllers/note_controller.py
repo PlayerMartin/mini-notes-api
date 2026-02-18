@@ -1,8 +1,11 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Query
 from starlette import status
 
 from config.di import get_note_repo
-from models.notes import CreateNote, Note
+from models.notes import CreateNote, Note, UpdateNote
 from repositories.note_repository import NoteRepository
 
 router = APIRouter(prefix="/notes")
@@ -12,9 +15,11 @@ router = APIRouter(prefix="/notes")
 async def get_notes(
     q: str | None = None,
     tag: str | None = None,
+    limit: Annotated[int, Query(le=5, ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0)] = 0,
     note_repo: NoteRepository = Depends(get_note_repo),
 ) -> list[Note]:
-    return await note_repo.get_all(q, tag)
+    return await note_repo.get_all(q, tag, limit, offset)
 
 
 @router.get("/{id}")
@@ -32,6 +37,18 @@ async def create_note(
     note: CreateNote, note_repo: NoteRepository = Depends(get_note_repo)
 ) -> Note:
     return await note_repo.create(note)
+
+
+@router.post("/{id}", status_code=status.HTTP_200_OK)
+async def update_note(
+    id: int, note: UpdateNote, note_repo: NoteRepository = Depends(get_note_repo)
+) -> Note:
+    res = await note_repo.update(id, note)
+    if not res:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Note not found"
+        )
+    return res
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

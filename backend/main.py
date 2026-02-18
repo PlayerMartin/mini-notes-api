@@ -4,6 +4,8 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from config.di import register_singletons
+
 load_dotenv()
 
 from config.db_config import create_db
@@ -13,6 +15,7 @@ from controllers.webhook_controller import router as webhook_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    register_singletons(app)
     await create_db()
     yield
 

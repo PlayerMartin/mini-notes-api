@@ -1,10 +1,10 @@
-from datetime import datetime
 from typing import Optional
 
 from sqlmodel import col, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from models.notes import CreateNote, Note
+from config.now import now
+from models.notes import CreateNote, Note, UpdateNote
 
 
 class NoteRepository:
@@ -14,7 +14,13 @@ class NoteRepository:
     async def get(self, note_id: int) -> Optional[Note]:
         return await self.session.get(Note, note_id)
 
-    async def get_all(self, q: str | None = None, tag: str | None = None) -> list[Note]:
+    async def get_all(
+        self,
+        q: str | None = None,
+        tag: str | None = None,
+        limit: int = 3,
+        offset: int = 0,
+    ) -> list[Note]:
         statement = select(Note)
 
         if tag:
@@ -24,6 +30,9 @@ class NoteRepository:
             statement = statement.where(
                 or_(col(Note.title).ilike(f"%{q}%"), col(Note.content).ilike(f"%{q}%"))
             )
+
+        if limit:
+            statement = statement.offset(offset).limit(limit)
 
         notes = await self.session.exec(statement)
         return list(notes.all())
@@ -35,15 +44,15 @@ class NoteRepository:
         await self.session.refresh(db_note)
         return db_note
 
-    # def update(self, hero_id: int, data: HeroUpdate) -> Optional[Hero]:
-    #     hero = self.get(hero_id)
-    #     if not hero:
-    #         return None
-    #     hero.sqlmodel_update(data.model_dump(exclude_unset=True))
-    #     self.session.add(hero)
-    #     self.session.commit()
-    #     self.session.refresh(hero)
-    #     return hero
+    async def update(self, note_id: int, note: UpdateNote) -> Optional[Note]:
+        found_note = await self.get(note_id)
+        if not found_note:
+            return None
+        found_note.sqlmodel_update(note.model_dump(exclude_unset=True))
+        self.session.add(found_note)
+        await self.session.commit()
+        await self.session.refresh(found_note)
+        return found_note
 
     async def delete(self, note_id: int) -> bool:
         note = await self.get(note_id)
@@ -52,7 +61,3 @@ class NoteRepository:
         await self.session.delete(note)
         await self.session.commit()
         return True
-
-
-def now() -> datetime:
-    return datetime.now()
