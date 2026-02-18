@@ -42,7 +42,7 @@ async def create_note(
     note_repo: NoteRepository = Depends(get_note_repo),
     idempotency_key: Annotated[str | None, Header()] = None,
 ) -> Note:
-    if idempotency_key in _create_cache:
+    if idempotency_key and idempotency_key in _create_cache:
         return _create_cache[idempotency_key]
 
     res = await note_repo.create(note)
@@ -57,7 +57,7 @@ async def update_note(
     note_repo: NoteRepository = Depends(get_note_repo),
     idempotency_key: Annotated[str | None, Header()] = None,
 ) -> Note:
-    if idempotency_key in _update_cache:
+    if idempotency_key and idempotency_key in _update_cache:
         return _update_cache[idempotency_key]
 
     res = await note_repo.update(id, note)
