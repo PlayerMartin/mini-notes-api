@@ -6,7 +6,7 @@ from fastapi.params import Header
 from starlette import status
 from starlette.status import HTTP_201_CREATED
 
-from models.notes import Note, CreateNote
+from models.notes import CreateNote, Note
 from models.webhooks import WebhookNote
 from repositories import note_repository
 

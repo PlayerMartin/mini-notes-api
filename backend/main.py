@@ -1,8 +1,6 @@
 import uvicorn
-from fastapi import FastAPI
 from dotenv import load_dotenv
-from fastapi.exceptions import RequestValidationError
-from starlette.responses import PlainTextResponse
+from fastapi import FastAPI
 
 from controllers.note_controller import router as note_router
 from controllers.webhook_controller import router as webhook_router

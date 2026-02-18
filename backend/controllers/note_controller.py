@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from starlette import status
 
-from models.notes import Note, CreateNote
 import repositories.note_repository as note_repository
+from models.notes import CreateNote, Note
 
 router = APIRouter(prefix="/notes")
 

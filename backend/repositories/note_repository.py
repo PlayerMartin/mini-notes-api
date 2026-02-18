@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from models.notes import Note, CreateNote
+from models.notes import CreateNote, Note
 
 DB = {}
 ID_gen: int = 0
