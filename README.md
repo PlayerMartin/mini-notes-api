@@ -1,235 +1,77 @@
-# Practical Task – Mini Notes REST API + Webhook Ingest
+# Mini Notes API
+Complete implementation of the Mini Notes API assessment.
 
-Dear candidate for Python and Automation Intern in DTSE,
+## Developer Notes
+This solution separates files similarly to layered architecture 
+for simplicity. This might not be the *Pythonist* way. However,
+that's what I'm the most comfortable with.
 
-Thank you for your time and interest in our position.
-This small practical exercise is designed to reflect a typical intern-level backend task that you would encounter working with in our team: building a small REST API and a simple integration (webhook) endpoint.
+For simplicity the .env file is version controlled, of course
+it would be in .gitignore in production software.
 
----
+## How to Run
+Prerequisites:
+- [Docker](https://www.docker.com/)
 
-## Goal
-Build a small REST API for managing **notes**, and add **one webhook endpoint** that can create a note from an incoming request (simulating an automation tool such as n8n / Power Automate).
-
-We care most about **clean, understandable code**, correct API behavior, and a README that lets us run it quickly.
-
----
-
-## Tech Requirements (minimal)
-- **Python 3.10+**
-- Framework: **FastAPI** (preferred) or Flask
-- Persistence:
-  - **Required:** In-memory storage (list/dict) is totally fine
-  - **Bonus:** SQLite or PostgreSQL (optional)
-
-> You can keep everything simple. Bonus items are *not* required.
-
----
-
-## Data Model (simple)
-A **Note** should contain at least:
-- `id` (int or UUID)
-- `title` (string, required)
-- `content` (string, optional)
-- `tags` (list of strings, optional)
-- `created_at` (timestamp)
-
----
-
-## Required API Endpoints
-
-### 1) Create a note
-`POST /notes`
-
-Request body:
-```json
-{ "title": "Buy milk", "content": "2L", "tags": ["shopping"] }
-```
-
-Response (example):
-```json
-{ "id": 1, "title": "Buy milk", "content": "2L", "tags": ["shopping"], "created_at": "2026-02-16T12:34:56Z" }
-```
-
-Expected behavior:
-- Validate required fields (title required)
-- Return **201 Created** on success
-
----
-
-### 2) List notes
-`GET /notes`
-
-Support these optional query parameters:
-- `q` – search in `title` and `content` (case-insensitive)
-- `tag` – filter notes that contain a given tag
-
-Examples:
-- `GET /notes?q=milk`
-- `GET /notes?tag=shopping`
-
----
-
-### 3) Get a single note
-`GET /notes/{id}`
-
-- Return **404 Not Found** if the note does not exist.
-
----
-
-### 4) Delete a note
-`DELETE /notes/{id}`
-
-- If deleted successfully, return **204 No Content** (or 200 is acceptable)
-- If not found, return **404 Not Found**
-
----
-
-## Required Webhook
-
-### 5) Create a note via webhook
-`POST /webhooks/note`
-
-Request body:
-```json
-{
-  "source": "n8n",
-  "message": "Reminder: submit timesheet",
-  "tags": ["admin"]
-}
-```
-
-Required behavior:
-- Create a new note from the webhook payload:
-  - `title` = first 40 characters of `message` (or the whole message if shorter)
-  - `content` = full `message`
-  - `tags` = provided tags
-  - (optional) append a tag like `source:n8n` based on `source`
-- Return the created note (or at minimum `{ "id": ... }`)
-
-Validation:
-- `message` is required
-
-### Optional security (bonus)
-Support a shared secret header:
-- Header: `X-Webhook-Token`
-- Compare against env var `WEBHOOK_TOKEN`
-- If missing or wrong → **401 Unauthorized**
-
----
-
-## Error Handling & Validation (bonus)
-- `title` required for `POST /notes`, max length e.g. 100
-- `message` required for `POST /webhooks/note`
-- Use meaningful HTTP status codes:
-  - 201, 200, 204
-  - 401 (if webhook token is implemented)
-  - 404 for missing note
-  - 422 (or similar) for validation errors
-
----
-
-## Tests (minimum)
-Please include **at least 2 automated tests** (pytest recommended):
-1. Create note → retrieve it
-2. Webhook call → creates a note → appears in `GET /notes`
-
----
-
-## Deliverables
-Please submit **either**:
-- A link to a Git repository (preferred), **or**
-- A ZIP archive containing the project
-
-Your submission should include:
-- Source code
-- `README.md` (this file) updated with your exact run instructions
-- Tests
-
-Bonus items are welcome but not required.
-
----
-
-## Bonus Ideas (optional)
-Pick any (or none):
-- Add `PUT /notes/{id}` to update a note
-- Add pagination: `GET /notes?limit=&offset=`
-- Persist notes in SQLite or PostgreSQL
-- Store a simple webhook event log (e.g., last 20 payloads in memory)
-- Add idempotency: if header `Idempotency-Key` repeats, do not create a duplicate note
-
----
-
-## How to Run (example)
-> Replace the commands below with what matches your project structure.
-
-### Create and activate virtual environment
+Start the stack from the repository root:
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# .venv\Scripts\activate   # Windows
+docker compose up --build
 ```
 
-### Install dependencies
+Services:
+- API: http://localhost:8080
+- OpenAPI docs: http://localhost:8080/docs
+
+Stop the stack:
 ```bash
-pip install -r requirements.txt
+docker compose down
 ```
 
-### Run the API (FastAPI example)
+## Project Structure
+`backend/` contains the FastAPI application and tests:
+- `main.py`: FastAPI app entry point and router registration.
+- `controllers/`: request/response routing for notes and webhook endpoints.
+- `models/`: Pydantic schemas for notes and webhook payloads.
+- `repositories/`: data access layer (notes storage, webhook log).
+- `config/`: dependency injection setup and database config.
+- `tests/`: pytest suites for notes and webhook flows.
+
+## Run Tests
+From the repository root:
 ```bash
-uvicorn app.main:app --reload --port 8000
+cd backend
+uv sync --dev
+uv run pytest
 ```
 
-API docs (FastAPI):
-- http://localhost:8000/docs
-
----
-
-## Example curl commands
+## Curl Commands
 
 ### Create a note
 ```bash
-curl -X POST http://localhost:8000/notes \
+curl -X POST http://localhost:8080/notes \
   -H "Content-Type: application/json" \
   -d '{"title":"Buy milk","content":"2L","tags":["shopping"]}'
 ```
 
 ### List notes
 ```bash
-curl http://localhost:8000/notes
+curl http://localhost:8080/notes
 ```
 
 ### Search notes
 ```bash
-curl "http://localhost:8000/notes?q=milk"
+curl "http://localhost:8080/notes?q=milk"
 ```
 
 ### Filter by tag
 ```bash
-curl "http://localhost:8000/notes?tag=shopping"
+curl "http://localhost:8080/notes?tag=shopping"
 ```
 
-### Create note via webhook
+### Webhook with token
 ```bash
-curl -X POST http://localhost:8000/webhooks/note \
+curl -X POST http://localhost:8080/webhooks/note \
   -H "Content-Type: application/json" \
+  -H "X-Webhook-Token: note-webhook" \
   -d '{"source":"n8n","message":"Reminder: submit timesheet","tags":["admin"]}'
 ```
-
-### Webhook with token (if implemented)
-```bash
-curl -X POST http://localhost:8000/webhooks/note \
-  -H "Content-Type: application/json" \
-  -H "X-Webhook-Token: your-token" \
-  -d '{"source":"n8n","message":"Reminder: submit timesheet","tags":["admin"]}'
-```
-
----
-
-## What we evaluate
-- Correctness of endpoints and status codes
-- Code readability and structure
-- Input validation and basic error handling
-- Ability to run the solution easily from README
-- Tests (even a couple are enough)
-
-Good luck — we’re looking forward to reviewing your solution!

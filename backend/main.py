@@ -21,6 +21,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/")
+async def root():
+    return {"message": "For API visualization visit /docs"}
+
+
 app.include_router(note_router)
 app.include_router(webhook_router)
 

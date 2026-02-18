@@ -1,0 +1,15 @@
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.git/
+.gitignore
+.idea/
+.python-version
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.env.example
+tests/
+uv.lock
